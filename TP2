@@ -1,0 +1,95 @@
+; Exemple de code pour  ATMEGA2560
+
+
+.EQU	DDRA = 0x01
+.EQU	PORTA = 0x02
+.EQU	DDRB = 0x04
+.EQU	PORTB = 0x05
+.EQU	EIMSK = 0x1D
+.EQU    EICRA = 0x69
+.EQU	PINA = 0x00
+.EQU    PINB = 0x03
+.ORG 0x0000
+JMP Debut
+
+
+.ORG 0x0002 ; INT0
+JMP Avance1pas
+.ORG 0x0004 ; INT1
+JMP Recule1pas
+
+
+.ORG	0x0080
+
+Debut:
+		; autorise les interruptions 0 et 1
+		EIMSK@IO <- 0b00000011 
+		; set les interruptions int0 et int1 sur front montant
+		EICRA <- 0b000001111 
+		; config direction port A et B : PA0 à PA7 en sortie, PB0 a PB7 en sortie
+		LDI R16, 0xFF 
+		OUT DDRA, R16
+		OUT DDRB, R16
+Init:	
+		LDI R18, 0
+		PORTA@IO <-0b00000001
+		PORTB@IO <-0b00000000
+    	;  
+    	SEI  
+    	JMP Boucle	
+
+	
+Avance1pas:  
+		si R18 = 1 alors saut AvancePinB
+		si PINA@IO = 0b10000000 alors R18 <- 1
+		; PINA << 1
+	    IN R20,PINA
+	    LSL R20
+	    OUT PORTA,R20
+	    si R18 = 1 alors saut AvancePinB
+	    ; Retour it
+	    RETI
+
+		
+AvancePinB:
+		si PINB@IO = 0b00000000 alors saut FirstIT
+		si PINB@IO = 0b00000001 alors saut Init
+		; PINB >> 1
+	    IN R20,PINB
+	    LSR R20
+	    ; PORTA <- PINB
+	    OUT PORTB,R20
+	    RETI
+FirstIT:
+		PINB@IO <- 0b10000000
+		RETI
+		
+Recule1pas:  
+		si R18 = 0 alors saut ReculePinA
+		si PINB@IO = 0b10000000 alors R18 <- 0
+		si PINB@IO = 0b10000000 alors PINA@IO <- 0b10000000
+		
+		; PINB >> 1
+	    IN R20,PINB
+	    LSL R20
+	    OUT PORTB,R20
+	    ; Retour it
+	    RETI
+
+		
+ReculePinA:
+		si PINA@IO = 0b00000001 alors R18 <- 1
+		si PINA@IO = 0b00000001 alors PINB@IO <- 0b00000001
+		; PINA >> 1
+	    IN R20,PINA
+	    LSR R20
+	    OUT PORTA,R20
+	    RETI
+FirstIT2:
+		PINB@IO <- 0b10000000
+		RETI
+		
+	    
+Boucle:
+		SLEEP
+		JMP Boucle
