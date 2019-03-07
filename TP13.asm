@@ -1,0 +1,12 @@
+
+.EQU	PINA = 0x00
+.EQU	DDRA = 0x01
+.EQU	PORTA = 0x02
+.EQU    PINB = 0x03
+.EQU	DDRB = 0x04
+.EQU	PORTB = 0x05
+
+.org 0x0000
+	jmp debut
+	
+.org 0x0100
